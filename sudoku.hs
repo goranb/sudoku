@@ -11,7 +11,7 @@ main = do
 
 randomDigits :: IO [Int]
 randomDigits = do
-  gen <- getStdGen
+  gen <- newStdGen
   return $ randomRs (1,9) gen
 
 random9 :: IO [Int]
