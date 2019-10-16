@@ -1,33 +1,13 @@
 module Main where
 
-import System.Random
 import Data.List
-import Control.Monad
+import Control.Monad.Random
 
 main :: IO ()
-main = do
-  r99 <- random99
-  putStr . show $ r99
-
-randomDigits :: IO [Int]
-randomDigits = do
-  gen <- newStdGen
-  return $ randomRs (1,9) gen
+main = random9x9 >>= print
 
 random9 :: IO [Int]
-random9 = do
-  digits <- randomDigits
-  return $ take 9 $ nub digits
+random9 = liftM (take 9 . nub) $ getRandomRs (1, 9)
 
-random99 :: IO [[Int]]
-random99 = replicate9 9 random9
-
-replicate9 :: Int -> IO [Int] -> IO [[Int]]
-replicate9 0 _ = return []
-replicate9 x y = do
-  r9 <- random9
-  (:) r9 <$> replicate9 (x - 1) y
-
--- prettyPrint :: IO [[Int]] -> IO ()
--- prettyPrint p = do
---   map (\l -> fmap (\d -> print d) l) p
+random9x9 :: IO [[Int]]
+random9x9 = sequence (replicate 9 random9)
