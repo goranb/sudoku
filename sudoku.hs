@@ -34,7 +34,7 @@ conform i  (s:ss) o = if s `elem` r || s `elem` c || s `elem` q then skip else a
                       reset = conform 0 ss []
                       skip = if candidates then continue else reset
                       append = conform (i+1) ss $ o ++ [s]
-conform _ _      o = o -- exhaustive pattern matching
+conform _  _     o = o -- exhaustive pattern matching
 
 row :: Int -> [a] -> [a]
 row _ [] = []
