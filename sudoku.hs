@@ -5,14 +5,20 @@ import Control.Monad.Random
 random9 :: IO [Int]
 random9 = getRandomRs (1, 9)
 
-prettyPrint :: [[Int]] -> IO ()
-prettyPrint s = sequence (map print s) >> return ()
+grp :: Int -> [a] -> [[a]]
+grp _ [] = []
+grp n l
+  | n > 0 = (take n l) : (grp n (drop n l))
+  | otherwise = error "Negative or zero n"
+
+prettyPrint :: [Int] -> IO ()
+prettyPrint s = sequence (map print $ grp 9 s) >> return ()
 
 main :: IO ()
 main = do
   r9 <- random9
   let con = conform 0 r9 []
-  prettyPrint $ grp 9 $ con
+  prettyPrint con
 
 conform :: Int -> [Int] -> [Int] -> [Int]
 conform 81 _      o = o
@@ -24,14 +30,11 @@ conform i  (s:ss) o = if s `elem` r || s `elem` c || s `elem` q then skip else a
                       c = column x o
                       q = quad (x `div` 3) (y `div` 3) o
                       candidates = any (\z -> not (z `elem` r || z `elem` c || z `elem` q)) [1..9]
-                      skip = if candidates then conform i ss o else conform 0 ss [] -- reset if no candidates
+                      continue = conform i ss o
+                      reset = conform 0 ss []
+                      skip = if candidates then continue else reset
                       append = conform (i+1) ss $ o ++ [s]
-
-grp :: Int -> [a] -> [[a]]
-grp _ [] = []
-grp n l
-  | n > 0 = (take n l) : (grp n (drop n l))
-  | otherwise = error "Negative or zero n"
+conform _ _      o = o -- exhaustive pattern matching
 
 row :: Int -> [a] -> [a]
 row _ [] = []
