@@ -17,24 +17,25 @@ prettyPrint s = sequence (map print $ grp 9 s) >> return ()
 main :: IO ()
 main = do
   r9 <- random9
-  let con = conform 0 r9 []
+  let con = conform r9 []
   prettyPrint con
 
-conform :: Int -> [Int] -> [Int] -> [Int]
-conform 81 _      o = o
-conform i  (s:ss) o = if s `elem` r || s `elem` c || s `elem` q then skip else append
+conform :: [Int] -> [Int] -> [Int]
+conform sx@(s:ss) o
+  | sx == []        = o
+  | length o == 81  = o
+  | otherwise       = if s `elem` r || s `elem` c || s `elem` q then skip else append
                       where
-                      x = i `mod` 9
-                      y = i `div` 9
+                      x = (length o) `mod` 9
+                      y = (length o) `div` 9
                       r = row y o
                       c = column x o
                       q = quad (x `div` 3) (y `div` 3) o
                       candidates = any (\z -> not (z `elem` r || z `elem` c || z `elem` q)) [1..9]
-                      continue = conform i ss o
-                      reset = conform 0 ss []
+                      continue = conform ss o
+                      reset = conform ss []
                       skip = if candidates then continue else reset
-                      append = conform (i+1) ss $ o ++ [s]
-conform _  _     o = o -- exhaustive pattern matching
+                      append = conform ss $ o ++ [s]
 
 row :: Int -> [a] -> [a]
 row _ [] = []
