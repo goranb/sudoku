@@ -24,17 +24,17 @@ conform :: [Int] -> [Int] -> [Int]
 conform sx@(s:ss) o
   | sx == []        = o
   | length o == 81  = o
-  | otherwise       = if placeable then append else skip
+  | otherwise       = if placeable s then append else skip
                       where
                       x = (length o) `mod` 9
                       y = (length o) `div` 9
                       r = row y o
                       c = column x o
                       q = quad (x `div` 3) (y `div` 3) o
-                      placeable = not $ s `elem` r || s `elem` c || s `elem` q
+                      placeable z = not $ z `elem` r || z `elem` c || z `elem` q
                       append = conform ss $ o ++ [s]
                       skip = if candidates then continue else reset
-                      candidates = any (\z -> not (z `elem` r || z `elem` c || z `elem` q)) [1..9]
+                      candidates = any placeable [1..9]
                       continue = conform ss o
                       reset = conform ss []
 
