@@ -64,8 +64,8 @@ paddingArg args = findmax $ map (\a -> do
 
 readMaybe :: Read a => String -> Maybe a
 readMaybe s = case reads s of
-              [(val, "")] -> Just val
-              _           -> Nothing
+                [(val, "")] -> Just val
+                _           -> Nothing
 
 findmax :: [Int] -> Int
 findmax xs = foldl (\a x -> max a x) 0 xs
