@@ -30,7 +30,7 @@ format f        p o
     hpad = replicate p ' '
     borders rs = [topcap] ++ inbetweens rs ++ [bottomcap]
     rows rs = map (\r -> rline '┃' '│' '┃' ' ' '┃' r) rs
-    inbetweenThin = rline '┃' '┼' '╂' '─' '┃' $ line '─'
+    inbetweenThin = rline '┠' '┼' '╂' '─' '┨' $ line '─'
     inbetweenThick = rline '┣' '┿' '╋' '━' '┫' $ line '━'
     inbetweenPad = join $ intersperse "\n" $ replicate (p `div` 2) $ rline '┃' '│' '┃' ' ' '┃' $ line ' '
     inbetweens rs = join $ intersperse [inbetweenThick] $ grp 5 $ join . (map (\r3 -> intersperse inbetweenThin r3)) $ grp 3 rs
@@ -56,11 +56,12 @@ formatArg args
   | otherwise               = Lines
 
 paddingArg :: [String] -> Padding
-paddingArg args = findmax $ map (\a -> do
-  case readMaybe a :: Maybe Int of
-    Just i -> i
-    Nothing -> 0
-  ) args
+paddingArg args = if p > -1 then p else 1
+  where
+    p = findmax $ map (\a -> case readMaybe a :: Maybe Int of
+        Just i -> i
+        Nothing -> (-1)
+      ) args
 
 readMaybe :: Read a => String -> Maybe a
 readMaybe s = case reads s of
@@ -68,7 +69,7 @@ readMaybe s = case reads s of
                 _           -> Nothing
 
 findmax :: [Int] -> Int
-findmax xs = foldl (\a x -> max a x) 0 xs
+findmax xs = foldl (\a x -> max a x) (-1) xs
 
 
 conform :: [Int] -> [Int] -> [Int]
