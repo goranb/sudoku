@@ -4,6 +4,7 @@ An experiment in making a sudoku generator in Haskell, to learn me a Haskell for
 
 This is the current output:
 
+```
   ┏━━━┯━━━┯━━━┳━━━┯━━━┯━━━┳━━━┯━━━┯━━━┓
   ┃ 7 │ 1 │ 8 ┃ 2 │ 5 │ 3 ┃ 9 │ 6 │ 4 ┃
   ┠───┼───┼───╂───┼───┼───╂───┼───┼───┨
@@ -23,7 +24,7 @@ This is the current output:
   ┠───┼───┼───╂───┼───┼───╂───┼───┼───┨
   ┃ 1 │ 8 │ 4 ┃ 9 │ 7 │ 6 ┃ 3 │ 5 │ 2 ┃
   ┗━━━┷━━━┷━━━┻━━━┷━━━┷━━━┻━━━┷━━━┷━━━┛
-
+```
 
 My first "real" Haskell program, BTW.
 
