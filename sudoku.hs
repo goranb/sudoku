@@ -11,14 +11,14 @@ type Padding = Int
 random9 :: IO [Int]
 random9 = getRandomRs (1, 9)
 
-grp :: Int -> [String] -> [[String]]
-grp _ [] = []
-grp n l
-  | n > 0 = (take n l) : (grp n (drop n l))
+groups :: Int -> [a] -> [[a]]
+groups _ [] = []
+groups n l
+  | n > 0 = (take n l) : (groups n (drop n l))
   | otherwise = error "Negative or zero n"
 
 strRows :: [Int] -> [[String]]
-strRows o = grp 9 $ map (\c -> show c) o
+strRows o = groups 9 $ map (\c -> show c) o
 
 format :: Format -> Padding -> [Int] -> String
 format OneLiner _ o = join . join . strRows $ o
@@ -29,25 +29,15 @@ format f        p o
     vpad = replicate (p `div` 2) '\n'
     hpad = replicate p ' '
     borders rs = [topcap] ++ inbetweens rs ++ [bottomcap]
-    rows rs = map (\r -> rline '┃' '│' '┃' ' ' '┃' r) rs
-    inbetweenThin = rline '┠' '┼' '╂' '─' '┨' $ line '─'
-    inbetweenThick = rline '┣' '┿' '╋' '━' '┫' $ line '━'
-    inbetweenPad = join $ intersperse "\n" $ replicate (p `div` 2) $ rline '┃' '│' '┃' ' ' '┃' $ line ' '
-    inbetweens rs = join $ intersperse [inbetweenThick] $ grp 5 $ join . (map (\r3 -> intersperse inbetweenThin r3)) $ grp 3 rs
-    topcap = rline '┏' '┯' '┳' '━' '┓' $ line '━'
-    bottomcap = rline '┗' '┷' '┻' '━' '┛' $ line '━'
-    rline ll cl cb m rl r = [ll] ++ (join $ intersperse [cb] $ map (\r3 -> join $ intersperse [cl] $ map (\c -> replicate p m ++ c ++ replicate p m) r3) $ grp 3 r) ++ [rl]
-    line c = replicate 9 [c]
-
-main :: IO ()
-main = do
-  args <- getArgs
-  r9 <- random9
-  let con = conform r9 []
-  let f = formatArg args
-  let p = paddingArg args
-  putStr $ format f p con
-  putStr "\n"
+    rows rs = map (\r -> line '┃' '│' '┃' ' ' '┃' r) rs
+    inbetweenThin = line '┠' '┼' '╂' '─' '┨' $ row9 '─'
+    inbetweenThick = line '┣' '┿' '╋' '━' '┫' $ row9 '━'
+    inbetweenPad = join $ intersperse "\n" $ replicate (p `div` 2) $ line '┃' '│' '┃' ' ' '┃' $ row9 ' '
+    inbetweens rs = join $ intersperse [inbetweenThick] $ groups 5 $ join . (map (\r3 -> intersperse inbetweenThin r3)) $ groups 3 rs
+    topcap = line '┏' '┯' '┳' '━' '┓' $ row9 '━'
+    bottomcap = line '┗' '┷' '┻' '━' '┛' $ row9 '━'
+    line ll cl cb m rl r = [ll] ++ (join $ intersperse [cb] $ map (\r3 -> join $ intersperse [cl] $ map (\c -> replicate p m ++ c ++ replicate p m) r3) $ groups 3 r) ++ [rl]
+    row9 c = replicate 9 [c]
 
 formatArg :: [String] -> Format
 formatArg args
@@ -58,15 +48,10 @@ formatArg args
 paddingArg :: [String] -> Padding
 paddingArg args = if p > -1 then p else 1
   where
-    p = findmax $ map (\a -> case readMaybe a :: Maybe Int of
-        Just i -> i
-        Nothing -> (-1)
+    p = findmax $ map (\a -> case reads a of
+        [(val, "")] -> val
+        _           -> (-1)
       ) args
-
-readMaybe :: Read a => String -> Maybe a
-readMaybe s = case reads s of
-                [(val, "")] -> Just val
-                _           -> Nothing
 
 findmax :: [Int] -> Int
 findmax xs = foldl (\a x -> max a x) (-1) xs
@@ -103,8 +88,14 @@ every _ [] = []
 every n as  = head as : every n (drop n as)
 
 quad :: Int -> Int -> [a] -> [a]
-quad x y o = q1 ++ q2 ++ q3
-  where
-  q1 = take 3 $ drop (x*3) $ row (y*3) o
-  q2 = take 3 $ drop (x*3) $ row (y*3 + 1) o
-  q3 = take 3 $ drop (x*3) $ row (y*3 + 2) o
+quad x y o = join $ map (\r -> take 3 $ drop (x*3) $ row (y*3 + r) o) [0..2]
+
+main :: IO ()
+main = do
+  args <- getArgs
+  r9 <- random9
+  let con = conform r9 []
+  let f = formatArg args
+  let p = paddingArg args
+  putStr $ format f p con
+  putStr "\nThλnx!"
