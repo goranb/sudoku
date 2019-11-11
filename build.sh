@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
 # build & invoke
-ghc --make sudoku.hs -o dist/sudoku -outputdir dist && ./dist/sudoku
+ghc -threaded -eventlog -rtsopts --make sudoku.hs -o dist/sudoku -outputdir dist # && ./dist/sudoku

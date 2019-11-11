@@ -3,6 +3,7 @@ module Main where
 import Control.Monad.Random
 import Data.List
 import System.Environment
+import System.IO
 
 data Format = Lines | Plain | OneLiner
   deriving (Eq)
@@ -11,6 +12,9 @@ type Padding = Int
 random9 :: IO [Int]
 random9 = getRandomRs (1, 9)
 
+random81 :: IO [Int]
+random81 = getRandomRs (0, 80)
+
 groups :: Int -> [a] -> [[a]]
 groups _ [] = []
 groups n l
@@ -18,7 +22,7 @@ groups n l
   | otherwise = error "Negative or zero n"
 
 strRows :: [Int] -> [[String]]
-strRows o = groups 9 $ map (\c -> show c) o
+strRows o = groups 9 $ map (\c -> if c > 0 then show c else " ") o
 
 format :: Format -> Padding -> [Int] -> String
 format OneLiner _ o = join . join . strRows $ o
@@ -56,24 +60,26 @@ paddingArg args = if p > -1 then p else 1
 findmax :: [Int] -> Int
 findmax xs = foldl (\a x -> max a x) (-1) xs
 
+placeable :: [Int] -> Int -> Int -> Int -> Bool
+placeable sudoku x y n = not $ n `elem` r || n `elem` c || n `elem` q
+  where
+    r = row y sudoku
+    c = column x sudoku
+    q = quad (x `div` 3) (y `div` 3) sudoku
 
 conform :: [Int] -> [Int] -> [Int]
-conform [] o = o -- not used because the random number list is infinite
-conform (s:ss) o
-  | length o == 81  = o
-  | otherwise       = if placeable s then append else skip
-                      where
-                        x = (length o) `mod` 9
-                        y = (length o) `div` 9
-                        r = row y o
-                        c = column x o
-                        q = quad (x `div` 3) (y `div` 3) o
-                        placeable z = not $ z `elem` r || z `elem` c || z `elem` q
-                        append = conform ss $ o ++ [s]
-                        skip = if candidates then continue else reset
-                        candidates = any placeable [1..9]
-                        continue = conform ss o
-                        reset = conform ss []
+conform []     sudoku = sudoku -- not used because the random number list is infinite
+conform (n:ns) sudoku
+  | length sudoku == 81 = sudoku
+  | otherwise           = if placeable sudoku x y n then append else skip
+                            where
+                              x = (length sudoku) `mod` 9
+                              y = (length sudoku) `div` 9
+                              append = conform ns $ sudoku ++ [n]
+                              skip = if candidates then continue else reset
+                              candidates = any (placeable sudoku x y) [1..9]
+                              continue = conform ns sudoku
+                              reset = conform ns []
 
 row :: Int -> [a] -> [a]
 row _ [] = []
@@ -90,12 +96,55 @@ every n as  = head as : every n (drop n as)
 quad :: Int -> Int -> [a] -> [a]
 quad x y o = join $ map (\r -> take 3 $ drop (x*3) $ row (y*3 + r) o) [0..2]
 
+problematize :: [Int] -> [Int] -> [Int]
+problematize []   sudoku = sudoku
+problematize (u:us) sudoku = if length (solve problematized) > 1 then sudoku else problematize us problematized
+  where
+    problematized = replace sudoku u 0
+
+solve :: [Int] -> [[Int]]
+solve []     = []
+solve sudoku
+  | not $ 0 `elem` sudoku = [sudoku]
+  | otherwise = join $ map solve potential
+    where
+      potential = case elemIndex 0 sudoku of
+        Nothing -> [sudoku]
+        Just n  -> map (\p -> replace sudoku n p) [ p |
+          p <- [1..9],
+          placeable sudoku x y p
+          ]
+          where
+            x = n `mod` 9
+            y = n `div` 9
+
+solved :: [Int] -> Bool
+solved sudoku = case elemIndex 0 sudoku of -- = elem 0 sudoku -- does not work?
+  Nothing -> True
+  Just _  -> False
+
+replace :: [Int] -> Int -> Int -> [Int]
+replace l i n = take i l ++ [n] ++ drop (i + 1) l
+
 main :: IO ()
 main = do
   args <- getArgs
   r9 <- random9
-  let con = conform r9 []
-  let f = formatArg args
-  let p = paddingArg args
-  putStr $ format f p con
-  putStr "\nThλnx!"
+  r81 <- random81
+  let u81 = nub r81
+  -- generate sudoku
+  let sudoku = conform r9 []
+  let problem = problematize u81 sudoku
+  let holes = length $ filter (\x -> x == 0) problem
+  let numbers = length $ filter (\x -> x /= 0) problem
+  -- pretty print
+  -- arguments
+  let layout = formatArg args
+  let padding = paddingArg args
+  putStr "Sudoku:\n"
+  putStr $ format layout padding problem ++ "\n"
+  putStr "Solution:\n"
+  putStr $ format layout padding sudoku ++ "\n"
+  putStr $ "Rank: " ++ replicate holes '▓' ++ replicate numbers '░' ++ "\n"
+  -- putStr "Ooh-λa-λa!\n"
+  if numbers < 30 then return () else main -- loop it, baby
