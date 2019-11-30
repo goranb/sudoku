@@ -3,11 +3,14 @@ module Main where
 import Control.Monad.Random
 import Data.List
 import System.Environment
-import System.IO
 
 data Format = Lines | Plain | OneLiner
-  deriving (Eq)
+  deriving (Eq, Read, Show)
+
 type Padding = Int
+type Solution = Bool
+type Rank = Bool
+
 
 random9 :: IO [Int]
 random9 = getRandomRs (1, 9)
@@ -21,13 +24,19 @@ groups n l
   | n > 0 = (take n l) : (groups n (drop n l))
   | otherwise = error "Negative or zero n"
 
+strRowsD :: String -> [Int] -> [[String]]
+strRowsD d o = groups 9 $ map (\c -> if c > 0 then show c else d) o
+
 strRows :: [Int] -> [[String]]
-strRows o = groups 9 $ map (\c -> if c > 0 then show c else " ") o
+strRows o = strRowsD " " o
+
+strRows_ :: [Int] -> [[String]]
+strRows_ o = strRowsD "_" o
 
 format :: Format -> Padding -> [Int] -> String
-format OneLiner _ o = join . join . strRows $ o
+format OneLiner _ o = join . join . strRows_ $ o
 format f        p o
-  | f == Plain      = join $ intersperse (vpad ++ "\n") $ map (\r -> join $ intersperse hpad r) $ strRows o
+  | f == Plain      = join $ intersperse (vpad ++ "\n") $ map (\r -> join $ intersperse hpad r) $ strRows_ o
   | otherwise       = join $ intersperse "\n" $ (if p > 1 then intersperse inbetweenPad else id) $ borders $ rows $ strRows o
   where
     vpad = replicate (p `div` 2) '\n'
@@ -56,6 +65,16 @@ paddingArg args = if p > -1 then p else 1
         [(val, "")] -> val
         _           -> (-1)
       ) args
+
+solutionArg :: [String] -> Solution
+solutionArg args
+  | "solution" `elem` args  = True
+  | otherwise               = False
+
+rankArg :: [String] -> Rank
+rankArg args
+  | "rank" `elem` args  = True
+  | otherwise           = False
 
 findmax :: [Int] -> Int
 findmax xs = foldl (\a x -> max a x) (-1) xs
@@ -140,11 +159,29 @@ main = do
   -- pretty print
   -- arguments
   let layout = formatArg args
+  let solution = solutionArg args
   let padding = paddingArg args
-  putStr "Sudoku:\n"
-  putStr $ format layout padding problem ++ "\n"
-  putStr "Solution:\n"
-  putStr $ format layout padding sudoku ++ "\n"
-  putStr $ "Rank: " ++ replicate holes '▓' ++ replicate numbers '░' ++ "\n"
+  let rank = rankArg args
+  let
+  -- sudoku
+  putStr $ format layout padding problem
+  if solution then do
+    -- solution
+    putStr $ terminator layout ++ format layout padding sudoku
+  else
+    return ()
+  if rank then do
+    -- rank
+    putStr $ terminator layout ++ if layout /= OneLiner then replicate holes '▓' ++ replicate numbers '░' else show numbers
+  else
+    return ()
+  putStr "\n"
+
   -- putStr "Ooh-λa-λa!\n"
-  if numbers < 30 then return () else main -- loop it, baby
+  -- if numbers < 30 then return () else main -- loop it, baby
+
+terminator :: Format -> String
+terminator l = case l of
+    OneLiner  -> ","
+    Plain     -> "\n\n"
+    Lines     -> "\n"
