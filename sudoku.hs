@@ -11,13 +11,6 @@ type Padding = Int
 type Solution = Bool
 type Rank = Bool
 
-
-random9 :: IO [Int]
-random9 = getRandomRs (1, 9)
-
-random81 :: IO [Int]
-random81 = getRandomRs (0, 80)
-
 groups :: Int -> [a] -> [[a]]
 groups _ [] = []
 groups n l
@@ -147,41 +140,42 @@ replace l i n = take i l ++ [n] ++ drop (i + 1) l
 
 main :: IO ()
 main = do
-  args <- getArgs
-  r9 <- random9
-  r81 <- random81
-  let u81 = nub r81
-  -- generate sudoku
-  let sudoku = conform r9 []
-  let problem = problematize u81 sudoku
-  let holes = length $ filter (\x -> x == 0) problem
-  let numbers = length $ filter (\x -> x /= 0) problem
-  -- pretty print
   -- arguments
+  args <- getArgs
   let layout = formatArg args
   let solution = solutionArg args
   let padding = paddingArg args
   let rank = rankArg args
-  let
+  -- generate sudoku
+  r9 <- getRandomRs (1, 9)
+  let sudoku = conform r9 []
+  r81 <- getRandomRs (0, 80)
+  let u81 = nub r81
+  let problem = problematize u81 sudoku
+  let holes = length $ filter (\x -> x == 0) problem
+  let numbers = length $ filter (\x -> x /= 0) problem
+  -- pretty print
   -- sudoku
   putStr $ format layout padding problem
   if solution then do
     -- solution
-    putStr $ terminator layout ++ format layout padding sudoku
+    putStr $ terminator layout
+    putStr $ format layout padding sudoku
   else
     return ()
   if rank then do
     -- rank
-    putStr $ terminator layout ++ if layout /= OneLiner then replicate holes '▓' ++ replicate numbers '░' else show numbers
+    putStr $ terminator layout
+    putStr $ if layout /= OneLiner then replicate holes '▓' ++ replicate numbers '░' else show numbers
   else
     return ()
   putStr "\n"
 
   -- putStr "Ooh-λa-λa!\n"
-  -- if numbers < 30 then return () else main -- loop it, baby
+  if numbers < 30 then return () else main -- loop it, baby
 
 terminator :: Format -> String
-terminator l = case l of
+terminator f = case f of
     OneLiner  -> ","
     Plain     -> "\n\n"
     Lines     -> "\n"
